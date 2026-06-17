@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build-and-test:
+    name: Qt ${{ matrix.qt-major }}.x / Linux
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - qt-major: 5
+            packages: qtbase5-dev qtbase5-dev-tools
+          - qt-major: 6
+            packages: qt6-base-dev
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Qt ${{ matrix.qt-major }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ${{ matrix.packages }}
+
+      - name: Configure
+        run: cmake -S . -B build -DBUILD_TESTING=ON
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure --verbose
